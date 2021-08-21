@@ -1,4 +1,4 @@
-function rho = QtoGrid(x,q,nx,L,method)
+function rho = QtoGrid(x,q,N,nx,L,method)
 % This function maps the particles to the grid cells to obtain charge 
 % density rho.  It uses the nearest-grid point method (i.e., whichever cell
 % the particle is in) for method=0, and the cloud-in-cell method for method
@@ -6,6 +6,7 @@ function rho = QtoGrid(x,q,nx,L,method)
 
 rho=zeros(1,nx);
 dx=L/(nx-1);
+n=1;
 
 switch method
     case 0 % Nearest grid point
@@ -18,8 +19,8 @@ switch method
             end
         end
     case 1 % Cloud in cell
-        for sp=1:length(q)
-            X=x{sp};
+        for sp=1:length(N)
+            X=x(n:(n-1+N(sp)));
             x_ind=floor(X/dx)+1;
             x_ind(x_ind<=0)=x_ind(x_ind<=0)+nx;
             x_ind(x_ind>nx)=x_ind(x_ind>nx)-nx;
@@ -33,6 +34,11 @@ switch method
                     rho(x_ind(i)+1)=rho(x_ind(i)+1)+q(sp)/dx*(X(i)-Xj);
                 end
             end
+            n=n+N(sp);
         end
 end
+
+% Neutralizing uniform background
+rhoavg=mean(rho);
+rho=rho-rhoavg;
 end

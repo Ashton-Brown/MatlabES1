@@ -11,38 +11,46 @@ dt=1e-2;
 
 % Define initial plasma and magentic field
 B0=0;
-
-fac=100;
-Ne=4;
-Ni=fac*Ne;
-xe=linspace(0+L/(2*Ne),L-L/(2*Ne),Ne);
-xi=linspace(0+L/(2*Ni),L-L/(2*Ni),Ni);
-
-ion=Species;
-ion.N=Ni;
-ion.q=1/fac;
-ion.vx0=0*ones(1,Ni);
-ion.vy0=0*ones(1,Ni);
-ion.x0=xi;
-ion.move_yn='n';
-
-electron=Species;
-electron.N=Ne;
-electron.q=-1;
-for i=1:Ne; alt(i)=(-1)^i; end
-electron.vx0=1e-1*alt.*ones(1,Ne);
-electron.vy0=0*ones(1,Ne);
-electron.x0=xe;
-
-species=[ion electron];
+species=PlasmaSetup(4,L);
 
 % Run pic solver
-ani=[1 1e2 2]; % Animate? [x y z] => x=0 (don't), 1 (do); y=frame speed (skip); z=plot forces on species z
+ani=[1 2e2 2]; % Animate? [x y z] => x=0 (don't), 1 (do); y=frame speed (skip); z=plot forces on species z
 method=[1 0]; % Choose methods for (1) weighting (0 for NGP and 1 for CIC) and (2) phi solution (0 for FD and 1 for FFT)
-[t,~,xe]=pic(species,nx,nt,dt,L,B0,method,ani);
+[t,x_all]=pic(species,nx,nt,dt,L,B0,method,ani);
+n=1;
+for sp=1:length(species)
+    N=species(sp).N;
+    x{sp}=x_all(n:(n-1+N),:);
+    n=n+N;
+end
 
 % Plot results
 figure
-plot(t,xe)
+plot(t,x{2})
 xlabel('time')
-ylabel('electron positions')
+ylabel('positions')
+
+% Repeat with no ions, relying on uniform neutralizing background (see
+% QtoGrid.m)
+species=PlasmaSetup(3,L);
+
+% Run pic solver
+ani=[1 1e2]; % Animate? [x y z] => x=0 for don't animate, 1 for animate; y=frame speed (skip); z=plot force on species z, leave empty for no force plot
+method=[1 0]; % Choose methods for (1) weighting (0 for NGP and 1 for CIC) and (2) phi solution (0 for FD and 1 for FFT)
+[t,x_all]=pic(species,nx,nt,dt,L,B0,method,ani);
+n=1;
+for sp=1:length(species)
+    N=species(sp).N;
+    x{sp}=x_all(n:(n-1+N),:);
+    n=n+N;
+end
+
+% Plot results
+figure
+hold on
+for sp=1:length(species)
+    plot(t,x{sp})
+end
+xlabel('time')
+ylabel('position')
+hold off

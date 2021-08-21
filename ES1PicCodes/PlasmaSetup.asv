@@ -44,7 +44,7 @@ switch p
         [x,v]=init(N,L,0,0,0,0,0,0,0);
         dx=L/10;
         for i=1:N
-            altdx(i)=(1)^(i)*dx;
+            altdx(i)=(-1)^(i)*dx;
         end
         
         electron=Species;
@@ -56,16 +56,12 @@ switch p
         
         species=electron;
         
-    case 4 % Alternating offset electrons, no initial velocities, large number of immobile neutralizing ions
+    case 4
         fac=100;
-        Ne=4;
+        Ne=5;
         Ni=fac*Ne;
         [xe,ve]=init(Ne,L,0,0,0,0,0,0,0);
         [xi,vi]=init(Ni,L,0,0,0,0,0,0,0);
-        dx=L/10;
-        for i=1:Ne
-            altdx(i)=(1)^(i)*dx;
-        end
 
         ion=Species;
         ion.N=Ni;
@@ -78,9 +74,10 @@ switch p
         electron=Species;
         electron.N=Ne;
         electron.q=-1;
+        for i=1:Ne; alt(i)=(-1)^i; end
         electron.vx0=ve;
         electron.vy0=ve;
-        electron.x0=xe+altdx;
+        electron.x0=xe;
 
         species=[ion electron];
 

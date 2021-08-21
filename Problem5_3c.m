@@ -26,18 +26,28 @@ ion.x0=linspace(0+L/(2*Nion),L-L/(2*Nion),Nion);
 ion.move_yn='n';
 
 electron=Species;
-x=linspace(0+L/(2*Nelec),L-L/(2*Nelec),Nelec);
+x0=linspace(0+L/(2*Nelec),L-L/(2*Nelec),Nelec);
 electron.N=Nelec;
 electron.q=-1;
-electron.vx0=v1*sin(2*pi/L*x);
+electron.vx0=v1*sin(2*pi/L*x0);
 electron.vy0=0*ones(1,Nelec);
-electron.x0=x;%linspace(0+L/(2*Nelec),L-L/(2*Nelec),Nelec);
+electron.x0=x0;%linspace(0+L/(2*Nelec),L-L/(2*Nelec),Nelec);
 
 species=[ion electron];
 
 % Run pic solver
-ani=[1 10]; % Animate? [x y] => x=0 for don't animate, 1 for animate; y=frame speed (skip)
+ani=[0 10]; % Animate? [x y] => x=0 for don't animate, 1 for animate; y=frame speed (skip)
 method=[1 0]; % Choose methods for (1) weighting (0 for NGP and 1 for CIC) and (2) phi solution (0 for FD and 1 for FFT)
-[t,~,xe]=pic(species,nx,nt,dt,L,B0,method,ani);
+[t,x_all]=pic(species,nx,nt,dt,L,B0,method,ani);
+n=1;
+for sp=1:length(species)
+    N=species(sp).N;
+    x{sp}=x_all(n:(n-1+N),:);
+    n=n+N;
+end
+
+% Plot results
 figure
-plot(t,xe)
+plot(t,x{2})
+xlabel('time')
+ylabel('positions')
