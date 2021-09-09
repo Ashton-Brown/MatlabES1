@@ -1,87 +1,79 @@
 %% Project 5-15 Landau Damping of Birdsall and Langdon
 
-addpath('ES1PicCodes')
+addpath('ES1PicSolver')
 clear; close all;
 
 % Define spacial and temporal grid parameters
 L=2*pi;
 nx=256;
-T=20;
+T=100;
 dt=1e-1;
 nt=T/dt;
 
 % Define initial plasma and magentic field
 B0=0;
 
-qc=-1;
-qh=-1;
-qm=-0.1;
-
-Nc=nx;
 Nh=2^14;
+Nc=nx;
 Nm=1020;
-fac=1;
-Ni=-fac*(qh*Nh+qc*Nc+qm*Nm);
 
-xi=linspace(0+L/(2*Ni),L-L/(2*Ni),Ni);
-xh=linspace(0+L/(2*Nh),L-L/(2*Nh),Nh);
-xc=linspace(0+L/(2*Nc),L-L/(2*Nc),Nc);
-xm=linspace(0+L/(2*Nm),L-L/(2*Nm),Nm);
+% Quiet start - haven't worked this out yet
+v1h=0;
+v2h=0;
+[~,vh0]=init(Nh,L,0,0,0,v1h,1,v2h,0);
 
-ion=Species;
-ion.N=Ni;
-ion.q=1/fac;
-ion.vx0=0*ones(1,Ni);
-ion.vy0=0*ones(1,Ni);
-ion.x0=xi;
-ion.move_yn='n';
+ehot=Species(Nh,L);
+ehot.qm=1;
+ehot.wp=0.383;
+ehot.vx0=vh0;
 
-ehot=Species;
-ehot.N=Nh;
-ehot.q=qh;
-ehot.m=1;
-ehot.vx0=0*ones(1,Nh);
-ehot.vy0=0*ones(1,Nh);
-ehot.x0=xh;
+v1c=2.5e-4;
+[~,vxc]=init(Nc,L,0,0,0,0,1,v1c,0);
+ecold=Species(Nc,L);
+ecold.qm=0.01;
+ecold.wp=0.924;
+ecold.vx0=vxc;
 
-ecold=Species;
-ecold.N=Nc;
-ecold.q=qc;
-ecold.m=100;
-ecold.vx0=0*ones(1,Nc);
-ecold.vy0=0*ones(1,Nc);
-ecold.x0=xc;
-
-marker=Species;
-marker.N=Nm;
-marker.q=qm;
-marker.m=-qm;
-vmode=3;
-v1=0.01;
+marker=Species(Nm,L);
+marker.qm=-1;
+marker.wp=10^-10;
+vmode=1;
+v1m=0;
 theta=0;
 for i=1:Nm
     switch mod(i-1+3,3)
         case 0
-            v0(1,i)=0.8+v1*cos(2*pi*vmode*xm(i)/L+theta);
+            v0(1,i)=0.8+v1m*cos(2*pi*vmode*marker.x0(i)/L+theta);
         case 1
-            v0(1,i)=0.9+v1*cos(2*pi*vmode*xm(i)/L+theta);
+            v0(1,i)=0.9+v1m*cos(2*pi*vmode*marker.x0(i)/L+theta);
         case 2
-            v0(1,i)=1.0+v1*cos(2*pi*vmode*xm(i)/L+theta);
+            v0(1,i)=1.0+v1m*cos(2*pi*vmode*marker.x0(i)/L+theta);
     end
 end
 marker.vx0=v0;
-marker.vy0=0*ones(1,Nm);
-marker.x0=xm;
 
-species=[marker ehot ecold ion];
+species=[marker ehot ecold];
 
 % Run pic solver
-ani=[0 0]; % Animate? [x y] => x=0 for don't animate, 1 for animate; y=frame speed (skip)
-method=[1 0]; % Choose methods for (1) weighting (0 for NGP and 1 for CIC) and (2) phi solution (0 for FD and 1 for FFT)
-[t,xm,xh,vxm,vxh]=pic(species,nx,nt,dt,L,B0,method,ani);
+ani=0;
+method=[1 0];
+[t,x_out,vx_out,~,ESE]=pic(species,nx,nt,dt,L,B0,method,ani);
+n=1;
+for sp=1:length(species)
+    N=species(sp).N;
+    x{sp}=x_out(n:(n-1+N),:);
+    vx{sp}=vx_out(n:(n-1+N),:);
+    n=n+N;
+end
+xm=x{1};
+xh=x{2};
+xc=x{3};
+vxm=vx{1};
+vxh=vx{2};
+vxc=vx{3};
 
 % Animate results
-skip=2;
+skip=10;
 figure
 for i=1:skip:length(t)
     Titl=sprintf('t = %2.1f',t(i));
@@ -89,23 +81,30 @@ for i=1:skip:length(t)
     title(Titl)
     xlabel('position')
     ylabel('vx')
-    xlim([0 L])
+    axis([0 L 0.7 1.3])
     pause(0.1)
 end
 
 % Plot results
-% times=[0 12 14 15 16 17];
-% for i=1:length(times)
-%     tlist=t(t<=times(i));
-%     tnear=tlist(end);
-%     tind(i)=find(t==tnear);
-% end
-% figure
-% for i=1:length(tind)
-%     Titl=sprintf('t = %2.1f',t(tind(i)));
-%     subplot(length(tind)/2,2,i)
-%     plot(xm(:,tind(i)),vxm(:,tind(i)),'.')
-%     title(Titl)
-%     xlabel('position')
-%     ylabel('vx')
-% end
+times=[2 16 30 40 90];
+tind=zeros(1,length(times));
+for i=1:length(times)
+    [~,I]=min(abs(t-times(i)));
+    tind(i)=I;
+end
+figure
+for i=1:length(tind)
+    Titl=sprintf('t = %2.1f',t(tind(i)));
+    subplot((length(tind)+1)/2,2,i)
+    plot([xm(:,tind(i)) (xm(:,tind(i))+L)],[vxm(:,tind(i)) vxm(:,tind(i))],'k.')
+    xlim([0 2*L])
+    title(Titl)
+    xlabel('position')
+    ylabel('vx')
+end
+subplot((length(tind)+1)/2,2,i+1)
+semilogy(t,ESE)
+axis([0 100 1e-7 1e-3])
+legend('F')
+xlabel('time')
+ylabel('Energy')

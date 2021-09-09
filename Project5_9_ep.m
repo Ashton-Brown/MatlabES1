@@ -1,51 +1,58 @@
 %% Project 5-9 e-p Stream of Birdsall and Langdon
 
-addpath('ES1PicCodes')
-clear
+addpath('ES1PicSolver')
+clear; close all;
 
 % Define spacial and temporal grid parameters
 L=2*pi;
-nx=64; % I have found that the stability depends on the # of grid cells
-T=30;
+nx=32;
+T=60;
 dt=1e-1;
 nt=T/dt;
 
 % Define initial plasma and magentic field
 B0=0;
 
-Ne=120;
-Ni=Ne;
+N=4096;
 
-xmode=0;
-x1=0;
-vmode=1/2;
-v1=0.01;
-theta=10*pi/L;
-[xe,v0e]=init(Ne,L,xmode,x1,0,1,vmode,v1,theta);
-[xi,v0i]=init(Ni,L,xmode,x1,0,-1,vmode,-v1,theta);
+xmode=1;
+x1=1e-3;
+vmode=0;
+v1=0;
+thetae=0;
+thetai=0;
+[xe,v0e]=init(N,L,xmode,x1,0,1,vmode,v1,thetae);
+[xi,v0i]=init(N,L,xmode,x1,0,-1,vmode,-v1,thetai);
 
-ion=Species;
-ion.N=Ni;
+ion=Species(N,L);
 ion.vx0=v0i;
-ion.vy0=0*ones(1,Ni);
 ion.x0=xi;
 
-electron=Species;
-electron.N=Ne;
-electron.q=-1;
+electron=Species(N,L);
+electron.qm=-1;
 electron.vx0=v0e;
-electron.vy0=0*ones(1,Ne);
 electron.x0=xe;
 
 species=[ion electron];
 
 % Run pic solver
-ani=[0 0]; % Animate? [x y] => x=0 for don't animate, 1 for animate; y=frame speed (skip)
-method=[1 0]; % Choose methods for (1) weighting (0 for NGP and 1 for CIC) and (2) phi solution (0 for FD and 1 for FFT)
-[t,xi,xe,vxi,vxe]=pic(species,nx,nt,dt,L,B0,method,ani);
+ani=0;
+method=[1 0];
+[t,x_out,vx_out,~,ESE,KE,DE,THE]=pic(species,nx,nt,dt,L,B0,method,ani);
+n=1;
+for sp=1:length(species)
+    N=species(sp).N;
+    x{sp}=x_out(n:(n-1+N),:);
+    vx{sp}=vx_out(n:(n-1+N),:);
+    n=n+N;
+end
+xi=x{1};
+xe=x{2};
+vxi=vx{1};
+vxe=vx{2};
 
 % Animate results
-skip=5;
+skip=10;
 figure
 for i=1:skip:length(t)
     Titl=sprintf('t = %2.1f',t(i));
@@ -58,18 +65,31 @@ for i=1:skip:length(t)
 end
 
 % Plot results
-times=[1 7 9 9.2 9.5 14];
+times=[14 15 16 33];
+tind=zeros(1,length(times));
 for i=1:length(times)
-    tlist=t(t<=times(i));
-    tnear=tlist(end);
-    tind(i)=find(t==tnear);
+    [~,I]=min(abs(t-times(i)));
+    tind(i)=I;
 end
 figure
 for i=1:length(tind)
     Titl=sprintf('t = %2.1f',t(tind(i)));
-    subplot(length(tind)/2,2,i)
-    plot(xi(:,tind(i)),vxi(:,tind(i)),'.',xe(:,tind(i)),vxe(:,tind(i)),'.')
+    subplot(length(tind)/2+1,2,i)
+    plot(xi(:,tind(i)),vxi(:,tind(i)),'k.',xe(:,tind(i)),vxe(:,tind(i)),'k.')
+    xlim([0 L])
     title(Titl)
     xlabel('position')
     ylabel('vx')
 end
+subplot(length(tind)/2+1,2,i+1)
+semilogy(t,ESE)
+legend('F')
+xlabel('time')
+ylabel('Energy')
+axis([0 30 1e-6 1.1])
+subplot(length(tind)/2+1,2,i+2)
+plot(t,DE,t,THE,t,ESE)
+legend('D','T','F')
+xlabel('time')
+xlim([0 30])
+ylabel('Energy')

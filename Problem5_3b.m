@@ -1,6 +1,6 @@
 %% Problem 5-3b of Birdsall and Langdon
 
-addpath('ES1PicCodes')
+addpath('ES1PicSolver')
 clear; close all;
 
 % Define spacial and temporal grid parameters
@@ -14,8 +14,8 @@ B0=0;
 species=PlasmaSetup(4,L);
 
 % Run pic solver
-ani=[1 2e2 2]; % Animate? [x y z] => x=0 (don't), 1 (do); y=frame speed (skip); z=plot forces on species z
-method=[1 0]; % Choose methods for (1) weighting (0 for NGP and 1 for CIC) and (2) phi solution (0 for FD and 1 for FFT)
+ani=[1 1e2 2];
+method=[1 0];
 [t,x_all]=pic(species,nx,nt,dt,L,B0,method,ani);
 n=1;
 for sp=1:length(species)
@@ -29,14 +29,15 @@ figure
 plot(t,x{2})
 xlabel('time')
 ylabel('positions')
+title('Large # of neutralizing, stationary ions')
+ylim([0 L])
 
-% Repeat with no ions, relying on uniform neutralizing background (see
-% QtoGrid.m)
+% Repeat with no ions, relying on uniform neutralizing background
 species=PlasmaSetup(3,L);
 
 % Run pic solver
-ani=[1 1e2]; % Animate? [x y z] => x=0 for don't animate, 1 for animate; y=frame speed (skip); z=plot force on species z, leave empty for no force plot
-method=[1 0]; % Choose methods for (1) weighting (0 for NGP and 1 for CIC) and (2) phi solution (0 for FD and 1 for FFT)
+ani=[1 1e2 1];
+method=[1 0];
 [t,x_all]=pic(species,nx,nt,dt,L,B0,method,ani);
 n=1;
 for sp=1:length(species)
@@ -53,4 +54,6 @@ for sp=1:length(species)
 end
 xlabel('time')
 ylabel('position')
+title('Uniform neutralizing background')
 hold off
+ylim([0 L])

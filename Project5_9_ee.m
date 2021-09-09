@@ -1,64 +1,59 @@
 %% Project 5-9 e-e Stream of Birdsall and Langdon
 
-addpath('ES1PicCodes')
+addpath('ES1PicSolver')
 clear; close all;
 
 % Define spacial and temporal grid parameters
 L=2*pi;
-nx=32*2; % I have found that the stability depends on the # of grid cells
-T=30;
+nx=32;
+T=80;
 dt=1e-1;
 nt=T/dt;
 
 % Define initial plasma and magentic field
 B0=0;
 
-fac=1e1;
-Ne1=320;
-Ne2=320;
-Ni=fac*(Ne1+Ne2);
+N=4096;
 
-xmode=0;
-x11=0;
-x12=0.001;
-vmode=1;
-v1=0.001;
-theta=1.5*pi/L;
-[xe1,v01]=init(Ne1,L,xmode,x11,0,1,vmode,-v1,theta);
-[xe2,v02]=init(Ne2,L,xmode,x12,0,-1,vmode,v1,theta);
-[xi,v0i]=init(Ni,L,0,0,0,0,0,0,0);
+xmode=1;
+x11=1e-3;
+x12=1e-3;
+vmode=0;
+v1=0;
+theta=0;
+[xe1,v01]=init(N,L,xmode,x11,0,1,vmode,-v1,theta);
+[xe2,v02]=init(N,L,xmode,x12,0,-1,vmode,v1,theta);
 
-ion=Species;
-ion.N=Ni;
-ion.q=1/fac;
-ion.vx0=v0i;
-ion.vy0=0*ones(1,Ni);
-ion.x0=xi;
-ion.move_yn='n';
-
-electron1=Species;
-electron1.N=Ne1;
-electron1.q=-1;
+electron1=Species(N,L);
+electron1.qm=-1;
 electron1.vx0=v01;
-electron1.vy0=0*ones(1,Ne1);
 electron1.x0=xe1;
 
-electron2=Species;
-electron2.N=Ne2;
-electron2.q=-1;
+electron2=Species(N,L);
+electron2.qm=-1;
 electron2.vx0=v02;
-electron2.vy0=0*ones(1,Ne2);
 electron2.x0=xe2;
 
-species=[electron1 electron2 ion];
+species=[electron1 electron2];
 
 % Run pic solver
-ani=[0 0]; % Animate? [x y] => x=0 for don't animate, 1 for animate; y=frame speed (skip)
-method=[1 0]; % Choose methods for (1) weighting (0 for NGP and 1 for CIC) and (2) phi solution (0 for FD and 1 for FFT)
-[t,xe1,xe2,vxe1,vxe2,ESE,KE,DE,THE]=pic(species,nx,nt,dt,L,B0,method,ani);
+ani=0;
+method=[1 0];
+[t,x_out,vx_out,~,ESE,KE,DE,THE]=pic(species,nx,nt,dt,L,B0,method,ani);
+n=1;
+for sp=1:length(species)
+    N=species(sp).N;
+    x{sp}=x_out(n:(n-1+N),:);
+    vx{sp}=vx_out(n:(n-1+N),:);
+    n=n+N;
+end
+xe1=x{1};
+xe2=x{2};
+vxe1=vx{1};
+vxe2=vx{2};
 
 % Animate results
-skip=2;
+skip=5;
 figure
 for i=1:skip:length(t)
     Titl=sprintf('t = %2.1f',t(i));
@@ -71,25 +66,26 @@ for i=1:skip:length(t)
     pause(0.1)
 end
 
-% Plot results
-% times=[1 11 13 14 15 17 24];
-% for i=1:length(times)
-%     tlist=t(t<=times(i));
-%     tnear=tlist(end);
-%     tind(i)=find(t==tnear);
-% end
-% figure
-% for i=1:length(tind)
-%     Titl=sprintf('t = %2.1f',t(tind(i)));
-%     subplot((length(tind)+1)/2,2,i)
-%     plot(xe(:,tind(i)),vxe(:,tind(i)),'.')
-%     xlim([0 L])
-%     title(Titl)
-%     xlabel('position')
-%     ylabel('vx')
-% end
-% subplot((length(tind)+1)/2,2,i+1)
-% plot(t,ESE+sum(KE,1));%,t,DE,t,THE,t,DE+THE)
-% legend('Etot')%'F','D','T')
-% xlabel('time')
-% ylabel('Energy')
+% Plot results like in text
+times=[16 17 18 34 60];
+tind=zeros(1,length(times));
+for i=1:length(times)
+    [~,I]=min(abs(t-times(i)));
+    tind(i)=I;
+end
+figure
+for i=1:length(tind)
+    Titl=sprintf('t = %2.1f',t(tind(i)));
+    subplot((length(tind)+1)/2,2,i)
+    plot(xe1(:,tind(i)),vxe1(:,tind(i)),'k.',xe2(:,tind(i)),vxe2(:,tind(i)),'k.')
+    xlim([0 L])
+    title(Titl)
+    xlabel('position')
+    ylabel('vx')
+end
+subplot((length(tind)+1)/2,2,i+1)
+plot(t,DE,t,THE,t,ESE)
+axis([0 30 0 DE(1)*1.05])
+legend('D','T','F','location','west')
+xlabel('time')
+ylabel('Energy')
