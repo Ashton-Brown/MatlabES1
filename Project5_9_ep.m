@@ -16,7 +16,7 @@ B0=0;
 N=4096;
 
 xmode=1;
-x1=1e-3;
+x1=1.1e-3;
 vmode=0;
 v1=0;
 thetae=0;
@@ -86,10 +86,10 @@ semilogy(t,ESE)
 legend('F')
 xlabel('time')
 ylabel('Energy')
-axis([0 30 1e-6 1.1])
+axis([0 30 1e-6 1.15])
 subplot(length(tind)/2+1,2,i+2)
 plot(t,DE,t,THE,t,ESE)
 legend('D','T','F')
-xlabel('time')
 xlim([0 30])
+xlabel('time')
 ylabel('Energy')

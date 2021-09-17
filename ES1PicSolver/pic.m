@@ -4,7 +4,8 @@ function [t_out,x_out,vx_out,vy_out,ESE,KE,DE,ThE] = pic(species,nx,nt,dt,L,B0,m
 
 %% INPUTS
 % species = A list of species that make up the plasma, all of class Species
-% nx = The number of grid points and grid cells.
+% nx =  The number of grid points and grid cells.  Must be even to use the
+%       fast Fourier transform method for calculating phi.
 % nt = The total number of time steps.
 % dt = The time step size.
 % L = The system length.
@@ -57,7 +58,7 @@ rho=get_rho(x,q,N,nx,L,method(1));
 phi=calc_phi(rho,dx,method(2));
 E0=calc_E(phi,dx);
 E=get_E(E0,x,N,nx,L,method(1));
-[vx,vy]=rotate(vx,vy,N,wc,-dt);
+[vx,vy]=rotate(vx,vy,N,wc,-dt/2);
 vx=accel(vx,N,E,qm,-dt,move_yn);
 
 

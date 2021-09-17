@@ -33,6 +33,7 @@ switch method
                 end
                 if x_ind(i)>nx
                     x_ind(i)=x_ind(i)-nx;
+                    X(i)=X(i)-L;
                 end
                 Xj=dx*(x_ind(i)-1)+dx/2;
                 Xjp1=dx*(x_ind(i))+dx/2;
@@ -48,6 +49,5 @@ switch method
 end
 
 % Neutralizing uniform background
-rhoavg=mean(rho);
-rho=rho-rhoavg;
+rho=rho-mean(rho);
 end
