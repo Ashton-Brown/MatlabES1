@@ -21,7 +21,7 @@ switch method
         phi=A\p';
         phi=phi';
         
-    case 1 % FFT method
+    case 1 % FFT method (see this issue: https://github.com/Ashton-Brown/MatlabES1/issues/1#issue-998824962)
         x=(0:(N-1))*dx+dx/2;
         k=linspace(-pi/dx,pi/dx,N);
         rhok=zeros(1,N);
